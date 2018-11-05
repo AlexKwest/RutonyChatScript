@@ -1,5 +1,5 @@
-﻿using System;
 using System.IO;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Newtonsoft.Json;
@@ -8,55 +8,32 @@ using Newtonsoft.Json;
 //by pasvitas twitch.tv/pasvitas
 
 namespace RutonyChat {
-public class RutonyBot
-{
-	public RutonyBot()
-	{
-		RankControl.ListChatters.Add(new RankControl.ChatterRank(){
-			Nickname = "Alexkwest", 
-			CreditsQty = 1000 });
-	    RankControl.ListChatters.Add(new RankControl.ChatterRank(){
-			Nickname = "Vasia", 
-			CreditsQty = 3000 });
-
-	}
-	public static void BotSay(string message)
-	{
-		Console.WriteLine($"Отправилось сообщение: {message}");
-	}
-}
-	public class RankControl
-	{
-		public static List<ChatterRank> ListChatters {get ; set;}
-		public class ChatterRank
-		{
-			public string Nickname {get;set;}
-			public int CreditsQty {get;set;}
-		}
-	}
-    public class Script 
-	{
-        public void RunScript(string username, int credit) {
+    public class Script {
+        public void RunScript(string site, string username, string text, string param) {
 			
-			string file = "\robbers.json";
+			string file = ProgramProps.dir_scripts + @"\robbers.json";
+
+
+
+			int credit;
 			RankControl.ChatterRank cr = RankControl.ListChatters.Find(r => r.Nickname == username.Trim().ToLower());
 
 			if (cr == null) {
-                RutonyBot.BotSay(
+                RutonyBot.BotSay(site,
                     username + ", ошибка! Вашей записи нет в базе данных или она повреждена!");
                 return;
             }
 			
-			if (credit == 0) {
-                RutonyBot.BotSay("Количество кредитов должно быть больше 0!");
+			if (!Int32.TryParse(text.Substring(text.IndexOf(" ") + 1), out credit)) {
+                RutonyBot.BotSay(site, "Количество кредитов должно быть больше 0!");
                 return;
             }
             if (credit <= 0) {
-                RutonyBot.BotSay("Кредитов должно быть больше 0!");
+                RutonyBot.BotSay(site, "Кредитов должно быть больше 0!");
                 return;
             }
             if (cr.CreditsQty < credit) {
-                RutonyBot.BotSay(string.Format("У вас всего {0} кредитов!", cr.CreditsQty));
+                RutonyBot.BotSay(site, string.Format("У вас всего {0} кредитов!", cr.CreditsQty));
                 return;
             }
 
@@ -66,7 +43,7 @@ public class RutonyBot
 
 			if (!File.Exists(file))
 			{
-				AddRobber(username, credit);
+				AddRobber(username, credit, site);
                 new Thread(() => {
                     Thread.CurrentThread.IsBackground = true;
 
@@ -99,7 +76,7 @@ public class RutonyBot
 								cr_win.CreditsQty += player.amount;
 								messageSuccess += player.name + " получил " + player.amount + " кредитов! ";
 							}
-							RutonyBot.BotSay("Ограбление прошло успешно! " + messageSuccess);
+							RutonyBot.BotSay(site, "Ограбление прошло успешно! " + messageSuccess);
 						}
 						else
 						{
@@ -111,7 +88,7 @@ public class RutonyBot
 									userBest = true;
 									RankControl.ChatterRank cr_win = RankControl.ListChatters.Find(r => r.Nickname == player.name);
 									cr_win.CreditsQty += sum;
-									RutonyBot.BotSay(player.name + " заложил свою банду. Обнёс общаг суммой: " + sum + " и свалил. Его подельники остались с носом.");
+									RutonyBot.BotSay(site, player.name + " заложил свою банду. Обнёс общаг суммой: " + sum + " и свалил. Его подельники остались с носом.");
 								}
 							}
 							if (!userBest)
@@ -127,11 +104,11 @@ public class RutonyBot
 										cr_win.CreditsQty = 0;
 										userBank += player.name + " ";
 									}
-									RutonyBot.BotSay(userBank + ", вас накрыл ОМОН и изъял все ваши грязные деньги.");
+									RutonyBot.BotSay(site, userBank + ", вас накрыл ОМОН и изъял все ваши грязные деньги.");
     							}
     							else 
     							{
-    								GetAnswer("Примечание автора");
+    								GetAnswer(site, "Примечание автора");
     								//RutonyBot.BotSay(site, "Ограбление не удалось, но грабителям удалось унести ноги.");
     							}		
 							}	
@@ -146,11 +123,11 @@ public class RutonyBot
 			}
 			else
 			{
-				AddRobber(username, credit);
+				AddRobber(username, credit, site);
 			}
         }
 
-        public void GetAnswer(string bandaName)
+        public void GetAnswer(string site, string bandaName)
         {
         	List<string> answer = new List<string>();
         	answer.Add("Ваша банда оказалась слишком слабой, и её отпинали в подворотне. Ограбление не удалось.");
@@ -195,16 +172,16 @@ public class RutonyBot
             } 
             catch 
             { 
-                RutonyBot.BotSay("Что-то пошло не так как задумывал Кодераст");
+                RutonyBot.BotSay(site, "Что-то пошло не так как задумывал Кодераст");
             }
 
             hitText = hitText.Replace("bandaName", bandaName);
-            RutonyBot.BotSay(hitText);
+            RutonyBot.BotSay(site, hitText);
         }
 	
 		public Robbers GetListRobbers()
 		{
-			string file = @"\robbers.json";
+			string file = ProgramProps.dir_scripts + @"\robbers.json";
 
 			Robbers players = new Robbers();
 
@@ -219,9 +196,9 @@ public class RutonyBot
 			return players;
 		}
 
-		public void AddRobber(string username, int vklad)
+		public void AddRobber(string username, int vklad, string site)
 		{
-			string file = @"\robbers.json";
+			string file = ProgramProps.dir_scripts + @"\robbers.json";
 			Robbers players = GetListRobbers();
 
 			Robber thisrobber = players.ListRobbers.Find(r => r.name == username.Trim().ToLower());
@@ -230,21 +207,18 @@ public class RutonyBot
                 
                 players.ListRobbers.Add(new Robber() {name=username.Trim().ToLower(), amount = vklad});
                 thisrobber = players.ListRobbers.Find(r => r.name == username.Trim().ToLower());
-				RutonyBot.BotSay(username + ", спасибо за вклад. Ждем других участников!");
+				RutonyBot.BotSay(site, username + ", спасибо за вклад. Ждем других участников!");
 
                 try {
                         File.Delete(file);
              	 } catch { }
 
             	string serialized = JsonConvert.SerializeObject(players);
-				using(StreamWriter steam = new StreamWriter(file))
-				{
-					steam.WriteAsync(serialized);
-				}
+            	RutonyBotFunctions.FileAddString(file, serialized);
             }
 			else
 			{
-				RutonyBot.BotSay(username + ", вы уже вложились в ограбление.");
+				RutonyBot.BotSay(site, username + ", вы уже вложились в ограбление.");
 
 			}
 
@@ -260,17 +234,9 @@ public class RutonyBot
 
     public class Robber
 	{
+
 		public string name {get; set;}
         public int amount {get; set;}
+
 	}
-
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            Script run = new Script();
-			run.RunScript("Alexkwest",500);
-        }
-    }
 }
-
